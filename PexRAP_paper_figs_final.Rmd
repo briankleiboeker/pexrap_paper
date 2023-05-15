@@ -1,0 +1,1359 @@
+---
+title: "PexRAP_paper_figs_final"
+output: html_document
+date: "2023-05-15"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r figure-1}
+library(dplyr)
+library(svglite)
+library(dplyr)
+library(ggplot2)
+library(rstatix)
+library(stringr)
+
+#figure 1h
+read.csv('iwat_adiposoft_quant_results.csv') %>% 
+  mutate(group = ifelse(group == "wt","Control","PexRAP-AKO")) %>% 
+  mutate(group = factor(group,levels=c("Control","PexRAP-AKO"))) %>%
+  mutate( x_bins = cut( area, breaks = seq(from = 0, to = 20000, by = 800) )) %>% 
+  group_by(group,x_bins) %>% 
+  summarise(n=n(),) %>% 
+  mutate(freq = n / sum(n),x=row_number()*800) %>% 
+  ggplot(aes(x=x,y=freq,color=group))+
+  geom_line()+
+  theme_bw()+
+  ylab("Proportion of total cells")+
+  xlab("Area (microns)")+
+  scale_color_manual(values = c("black","red"))+
+  #theme(legend.position = "none")+
+  labs(color = "Genotype:")+
+  scale_y_continuous(limits = c(0,0.18))+
+  annotate("text", x = 2400, y = 0.175, label = "*",size=7,color="black")+
+  annotate("text", x = 4800, y = 0.125, label = "*",size=7,color="black")+
+  annotate("text", x = 7200, y = 0.06, label = "*",size=7,color="black")
+
+read.csv('iwat_adiposoft_quant_results.csv')%>% 
+  mutate(group = ifelse(group == "wt","Control","PexRAP-AKO")) %>% 
+  group_by(group) %>% 
+  summarise(n = n())
+
+read.csv('iwat_adiposoft_quant_results.csv') %>% filter( area < 10000) %>% 
+  mutate( x_bins = cut( area, breaks = seq(from = 0, to = 20000, by = 800) )) %>% 
+  group_by(x_bins,name) %>% 
+  summarise(n=n(),) %>% 
+  mutate(group = str_sub(name,start = 1, end = 2)) %>% 
+  group_by(x_bins) %>% 
+  t_test(n ~ group)
+
+#figure 1i
+read.csv('ewat_adiposoft_quant_results.csv') %>% 
+  mutate(group = ifelse(group == "wt","Control","PexRAP-AKO")) %>% 
+  mutate(group = factor(group,levels=c("Control","PexRAP-AKO"))) %>%  
+  mutate( x_bins = cut( area, breaks = seq(from = 0, to = 20000, by = 800) )) %>% 
+  group_by(group,x_bins) %>% 
+  summarise(n=n(),) %>% 
+  mutate(freq = n / sum(n),x=row_number()*800) %>% 
+  ggplot(aes(x=x,y=freq,color=group))+
+  geom_line()+
+  theme_bw()+
+  ylab("Proportion of total cells")+
+  xlab("Area (microns)")+
+  scale_color_manual(values = c("black","red"))+
+  #theme(legend.position = "none")+
+  labs(color = "Genotype:")+
+  scale_y_continuous(limits = c(0,0.20))+
+  annotate("text", x = 1600, y = 0.195, label = "*",size=7,color="black")
+
+read.csv('ewat_adiposoft_quant_results.csv') %>% 
+  mutate(group = ifelse(group == "wt","Control","PexRAP-AKO")) %>% 
+  group_by(group) %>% 
+  summarise(n = n())
+
+read.csv('ewat_adiposoft_quant_results.csv') %>% filter( area < 10000) %>% 
+  mutate( x_bins = cut( area, breaks = seq(from = 0, to = 20000, by = 800) )) %>% 
+  group_by(x_bins,name) %>% 
+  summarise(n=n(),) %>% 
+  mutate(group = str_sub(name,start = 1, end = 2)) %>% 
+  group_by(x_bins) %>% 
+  t_test(n ~ group)
+
+```
+
+```{r figure-2}
+library(DescTools)
+library(stringr)
+library(ggplot2)
+library(dplyr)
+
+#calculate area of the curve of HFD_fed PexRAP-AKO mice GTT (fig 2b)
+gtt<-read.csv('pexrap_ako_gtt.csv')
+timepoints <- gtt$time
+gtt<-gtt[,-1]
+
+ms<-c(rep("",ncol(gtt)))
+area<-c(rep("",ncol(gtt)))
+glc_time_zero<-c(rep("",ncol(gtt)))
+
+for(i in 1:(ncol(gtt)-1)){
+  ms[i]<-colnames(gtt)[i]
+  area[i]<-AUC(timepoints,gtt[,i])
+  glc_time_zero[i]<-gtt[1,i]
+}
+
+gtt_aucs<-data.frame(ms,area,glc_time_zero)
+gtt_aucs$grp<-str_remove(gtt_aucs$ms,"[0-9]+")
+
+#this caluclates area of the curve
+gtt_aucs$aoc<- (as.numeric(gtt_aucs$area) - (as.numeric(gtt_aucs$glc_time_zero)*120))
+
+#results for fig 2b
+gtt_aucs
+
+
+#calculate area of the curve of HFD_fed PexRAP-AKO mice ITT (fig 2b)
+itt<-read.csv('pexrap_ako_itt.csv')
+timepoints <- itt$time
+itt<-itt[,-1]
+
+ms<-c(rep("",ncol(itt)))
+area<-c(rep("",ncol(itt)))
+glc_time_zero<-c(rep("",ncol(itt)))
+
+for(i in 1:(ncol(itt)-2)){
+  ms[i]<-colnames(itt)[i]
+  area[i]<-AUC(timepoints,itt[,i])
+  glc_time_zero[i]<-itt[1,i]
+}
+itt_aucs<-data.frame(ms,area,glc_time_zero)
+itt_aucs$grp<-str_remove(itt_aucs$ms,"[0-9]+")
+
+#this caluclates area of the curve
+itt_aucs$aoc<- ((as.numeric(itt_aucs$glc_time_zero)*120) - as.numeric(itt_aucs$area) )
+
+#results for fig 2e
+itt_aucs
+```
+
+```{r figure-3}
+suppressMessages({
+  library(edgeR)
+  library(dplyr)
+  library(ggplot2)
+  library(ggrepel)
+  library(GO.db)
+  library(org.Mm.eg.db)
+  library(ComplexHeatmap)
+  library(stringr)
+  library(svglite)
+})
+counts_full<-read.csv('all.gene_counts.csv')
+
+#drop all columns except for raw counts by selecting only the columns w/counts
+just_counts<-counts_full %>% 
+  dplyr::select("sample.wt_8","sample.wt_7","sample.wt_5","sample.wt_3","sample.wt_2","sample.ko_6","sample.ko_5","sample.ko_3","sample.ko_2","sample.ko_1")
+
+#convert counts into matrix
+just_counts<-as.matrix(just_counts)
+
+#name rows of the matrix as ensemblIDs stored in list generic_gene
+rownames(just_counts)<- counts_full$ensembl_gene_id
+
+conditions<-c(rep("A",5),rep("B",5))
+design <- model.matrix(~conditions)
+
+
+#set data into DGElist type
+d <- DGEList(counts=just_counts,group=factor(conditions),genes=data.frame("ENTREZID"=counts_full$entrezgene,"SYMBOL"=counts_full$external_gene_name))
+
+
+keep<-filterByExpr(d,design)
+d<-d[keep,]
+
+#reset lib sizes after filtering (edgeR user guide and other sources all say to do this)
+d$samples$lib.size <- colSums(d$counts)
+#find normalization factors
+d<-calcNormFactors(d)
+logcpm<-cpm(d,log=TRUE)
+cpm_pexrap<-cpm(d,log=T)
+
+y <- estimateDisp(d,design,robust = TRUE)
+#plotBCV(y)
+
+#get results
+fit <- glmQLFit(y,design)
+qlf <- glmQLFTest(fit,coef=2)
+
+#store results as toptag_results
+toptag_results<-topTags(qlf,n="Inf")$table
+
+toptag_results_pexrap<-topTags(qlf,n="Inf")$table
+
+
+i<-is.na(qlf$genes$ENTREZID)
+#remove genes known to be upregulated due to adiponectin-Cre alone (see PMID: 33565916)
+j<-qlf$genes$SYMBOL=="Rfc4"|qlf$genes$SYMBOL=="Zfp949"|qlf$genes$SYMBOL=="Dhrs7b"
+
+qlf2<-qlf[!i&!j,]
+
+go<-goana(qlf2,species="Mm",geneid="ENTREZID",plot=TRUE)
+topGO(go,n=Inf)
+
+#figure 3a
+toptag_results %>% 
+  mutate(change=ifelse(PValue<=0.05,ifelse(logFC>0,"Upregulated","Downregulated"),"No_change")) %>% 
+  mutate(SYMBOL=ifelse(SYMBOL=="Dhrs7b","PexRAP",SYMBOL)) %>% 
+  arrange(-FDR) %>% 
+  filter(SYMBOL!="Zfp949") %>% 
+  ggplot(aes(x=logFC,y=-log10(FDR),color=change,label=SYMBOL))+
+  geom_point(size=0.7)+
+  theme_bw()+
+  annotate("text", x = 3.75, y = 0, label = "Upregulated\nin PexRAP-AKO",size=5,color="red")+
+  annotate("text", x = -3.75, y = 0, label = "Downregulated\nin PexRAP-AKO",size=5,color="blue")+
+  scale_color_manual(values=c( "blue","gray","red"))+ 
+  scale_x_continuous(limits=c(-4.25,4.25))+
+  labs(color="Fold-change")+
+  geom_label_repel(data = ~ subset(.x,SYMBOL == "PexRAP" | SYMBOL == "Lpcat3" | SYMBOL == "Acsl3" | SYMBOL == "Scd2" | SYMBOL == "Insig1" | SYMBOL == "Acss2" | SYMBOL == "Sqle" | SYMBOL == "Cyp51"),
+                  size=5.5,
+                  max.overlaps = Inf,
+                  max.iter = 3e6,
+                  max.time = 20,
+                  min.segment.length = 0
+                  )+
+  ggtitle("")+
+  ylab("-log10(P-Value)")+
+  theme(legend.position = "none",text = element_text(size=20))
+
+#figure 3b
+zscores<-as.data.frame(t(scale(t(logcpm[rownames(logcpm)%in%rownames(toptag_results %>% 
+  filter(PValue<=0.01)),]))))
+rownames(zscores)<-NULL
+
+Heatmap(as.matrix(zscores),
+           cluster_columns = T,
+           show_row_dend = F, 
+           name="Z-score",
+           column_split = c(rep("WT",5),rep("AKO",5)), 
+           column_gap = unit(0,"mm"),
+           show_parent_dend_line = F,
+           column_labels = c(paste0(rep("Control_"),1:5),paste0(rep("PexRAP_AKO_"),1:5)),   
+           column_names_gp = grid::gpar(fontsize = 15), 
+           column_title=" ",
+           heatmap_legend_param = list(
+                direction="horizontal",
+                title_position = "topcenter"))
+
+#figure 3c
+g<-topGO(go,n=23)
+g %>% 
+  filter(!(Term%in%c("secondary alcohol biosynthetic process","sterol biosynthetic process","cholesterol metabolic process","steroid biosynthetic process","sterol metabolic process","alcohol biosynthetic process","secondary alcohol metabolic process","small molecule biosynthetic process","organic hydroxy compound biosynthetic process","steroid metabolic process","alcohol metabolic process","small molecule metabolic process","organic hydroxy compound metabolic process","fatty-acyl-CoA metabolic process","cellular response to sterol depletion"))) %>% 
+  mutate(GeneRatio=(Up+Down)/N) %>% 
+  ggplot(aes(y=reorder(Term,-P.Up),x=-log10(P.Up),color=GeneRatio,size=Up))+
+  geom_point()+
+  scale_color_gradient2(low="blue",mid="blue",
+                     high="red", space ="Lab" )+
+  theme_bw()+
+  theme(text = element_text(size=17))+
+  xlab("-log10(p-upregulated)")+
+  ylab("")+
+  labs(size="Number of\ngenes\nupregulated",
+       color="Ratio of\ngenes in\npathway\nupregulated")+
+  ggtitle("")+
+  scale_y_discrete(labels = function(x) str_wrap(str_replace_all(x, "foo" , " "),
+                                                 width = 13))
+
+library(biomaRt)
+ensembl = useMart("ensembl",dataset="mmusculus_gene_ensembl", host="https://useast.ensembl.org") #uses human ensembl annotations
+
+gene.data <- getBM(attributes=c('ensembl_gene_id','external_gene_name', 'ensembl_transcript_id', 'go_id'),
+                   filters = 'go', values = 'GO:0006695', mart = ensembl)
+
+cholesterol_biosynthesis_symbols<-mapIds(x = org.Mm.eg.db, 
+                   keys = unique(gene.data$ensembl_gene_id), 
+                   keytype = "ENSEMBL",
+                   column = c("SYMBOL"),
+                  multiVals = "first")
+lcpm<-as.data.frame(logcpm)
+
+lcpm$Symbol<-mapIds(x = org.Mm.eg.db, 
+                   keys = rownames(lcpm), 
+                   keytype = "ENSEMBL",
+                   column = c("SYMBOL"),
+                  multiVals = "first")
+lcpm<-lcpm %>% filter(Symbol %in% cholesterol_biosynthesis_symbols) 
+
+rownames(lcpm)<-make.names(lcpm$Symbol,unique = T)
+lcpm<-lcpm[,-11]
+
+zscores<-as.data.frame(t(scale(t(lcpm))))
+zscores<-data.frame("Control"=rowMeans(as.matrix(zscores)[,1:5]),"PexRAP_AKO"=rowMeans(as.matrix(zscores)[,6:10]))
+
+#figure 3d
+Heatmap(as.matrix(zscores %>% arrange(desc(PexRAP_AKO))),
+           cluster_columns = F,
+           cluster_rows=F,
+           name="Normalized expression (log2)",
+           heatmap_legend_param = list(at=c(-1,0,1),
+                direction="horizontal",
+                width= 100,
+                title_position = "topcenter",
+                legend_width = unit(9, "cm"),
+                labels_gp = gpar(fontsize = 16),
+                title_gp = gpar(fontsize = 16)),
+           column_names_side = "top",
+           column_names_rot = 0,
+           column_names_centered = T,
+           row_names_gp = gpar(fontsize = 11),
+           column_names_gp = gpar(fontsize = 20))
+
+
+
+#figure 3f
+lipogenic.genes = c("Acaca","Scd2","Scd1","Fasn","Acly","Elovl6","Elovl3","Acss2","Me1","G6pdx")
+toptag_results %>% 
+  mutate(psig = ifelse(PValue <= 0.05,TRUE,FALSE),
+         fsig = ifelse(FDR <= 0.05,TRUE,FALSE),
+         SYMBOL = ifelse(SYMBOL == "Dhrs7b","PexRAP",SYMBOL)) %>% 
+  arrange(-FDR) %>% 
+  ggplot(aes(x=logCPM,y=logFC,shape=psig,label = SYMBOL,color = SYMBOL %in% lipogenic.genes))+
+  geom_point()+
+  geom_text_repel(data = ~subset(.,SYMBOL %in% lipogenic.genes | SYMBOL == "PexRAP"),
+                max.iter = 3e7,
+                max.time = 2,
+                size = 5.5,
+                max.overlaps = Inf,
+                min.segment.length = 0,
+                segment.size = 0.4)+
+  theme_bw()+
+  labs(color = "De novo lipogenesis\ngenes",
+       shape = "PValue < 0.05")+
+  scale_color_manual(values = c("gray53","red"))+
+  theme(text = element_text(size = 20))+
+  annotate("text", x = 12.5, y = 3.5, label = "Upregulated\nin PexRAP-AKO",size=5,color="black")+
+  annotate("text", x = 12.5, y = -2.5, label = "Downregulated\nin PexRAP-AKO",size=5,color="black")
+
+
+library(clusterProfiler)
+library(svglite)
+library(enrichplot)
+tt<-qlf2$table
+tt$entrezid<-qlf2$genes$ENTREZID
+tt$rank<-tt$logFC*-log10(tt$PValue)
+
+gsea_genelist<-qlf2$table$logFC
+gsea_genelist<-tt$rank
+names(gsea_genelist)<-tt$entrezid
+
+gsea_genelist<-sort(gsea_genelist,decreasing = TRUE)
+
+gse <- gseGO(geneList=gsea_genelist,
+             ont ="ALL",
+             keyType = "ENTREZID",
+             nPerm = 10000,
+             minGSSize = 3,
+             maxGSSize = 800,
+             pvalueCutoff = 0.05,
+             verbose = TRUE,
+             OrgDb = org.Mm.eg.db,
+             pAdjustMethod = "BH")
+#fig 3e
+gseaplot2(gse, title = gse$Description[which(gse$Description == "lipid biosynthetic process")], geneSetID = gse@result$ID[which(gse$Description == "lipid biosynthetic process")])
+
+#figure 3g
+lipogenic.genes = c("Acaca","Scd2","Scd1","Fasn","Acly","Elovl6","Elovl3","Acss2","Me1","G6pdx")
+lcpm<-as.data.frame(logcpm)
+lcpm$Symbol<-mapIds(x = org.Mm.eg.db, 
+                   keys = rownames(lcpm), 
+                   keytype = "ENSEMBL",
+                   column = c("SYMBOL"),
+                  multiVals = "first")
+lcpm<-lcpm %>% filter(Symbol %in% lipogenic.genes)
+rownames(lcpm)<-lcpm$Symbol
+lcpm<-lcpm[match(lipogenic.genes,lcpm$Symbol),-11]
+zscores<-as.data.frame(t(scale(t(lcpm))))
+
+h<-Heatmap(as.matrix(zscores),
+        cluster_rows = T,
+        cluster_columns = F,
+        name = "Z-score",
+        column_labels = c(paste0(rep("WT",5),"_",c(1,2,3,4,5)),paste0(rep("PexRAP_AKO",5),"_",c(1,2,3,4,5))),
+        row_title_rot = 0,
+        show_parent_dend_line = T,
+        column_order = c("sample.wt_8", "sample.wt_7","sample.wt_2", "sample.wt_5", "sample.wt_3", "sample.ko_1","sample.ko_6", "sample.ko_5","sample.ko_3","sample.ko_2"),
+        heatmap_legend_param = list(at=c(-1,0,1),
+                direction="horizontal",
+                width= 100,
+                title_position = "topcenter",
+                legend_width = unit(9, "cm"),
+                labels_gp = gpar(fontsize = 16),
+                title_gp = gpar(fontsize = 16)),
+        show_row_dend = F)
+
+draw(h,heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+```
+
+```{r figure-5bc-and-suppFig-6a}
+library(dplyr)
+library(stringr)
+library(ggplot2)
+library(tidyr)
+library(ggrepel)
+library(svglite)
+library(OrgMassSpecR)
+extract_num_elements <- function(element_letter,composition){
+  if(element_letter=="N"|element_letter=="n"){
+    element_letter<-"N(?!a)"
+  }
+  #if there is a square bracket (i.e. if it's an isotope), substitute in the double brackets so it works with regex below
+  if(grepl("\\[",element_letter)){
+    element_letter<-gsub("\\[","\\\\[",element_letter)
+    element_letter<-gsub("\\]","\\\\]",element_letter)
+  }
+  
+  num <- ifelse(!grepl(element_letter,composition,perl = T,ignore.case = T),
+                #paste0(element_letter,"(?=\\s)|",element_letter,"(?=[0-9]+)|",element_letter,"$")
+                0,  #return zero
+                ifelse(!grepl(paste0("(?<=",element_letter,")[0-9]+|(?<=",element_letter,"\\s)[0-9]+"),composition,perl = T,ignore.case = T), #else, 
+                       1,
+                       as.numeric(regmatches(composition,regexpr(paste0("(?<=",element_letter,")[0-9]+|(?<=",element_letter,"\\s)[0-9]+"),composition,perl = T,ignore.case = T)))))
+  return(num)
+}
+all.species <- c("LPA(",paste0("PA",c("(O-","(P-","(")),
+                 "LPI(",paste0("PI",c("(O-","(P-","(")),
+                 "LPG(",paste0("PG",c("(O-","(P-","(")),
+                 "LPS(",paste0("PS",c("(O-","(P-","(")),
+                 "LPE(",paste0("PE",c("(O-","(P-","(")),
+                 "LPC(",paste0("PC",c("(O-","(P-","(")),
+                 "SM(","Ceramide(","DAG(","TAG(")
+assign.el.vs.plasmalogen.vs.lyso <- function(c,o,rdb,max.o,general.class,base.carbons,lyso.carbon.cutoff,ion.mode,base.rdb){
+  if(ion.mode == "neg.ion"){
+    additive <- 1
+  }else{
+    additive <- 0
+  }
+  
+  
+  if(o == max.o){
+    #not an EL or lyso- species
+    return(paste0(general.class,"("))
+  }else{
+    #either an EL or lyso-species (but not both, as that would be o-2)
+    if((c - base.carbons) <= lyso.carbon.cutoff){
+      #lyso species
+      return(paste0("L",general.class,"("))
+    }else{
+      #an EL
+      
+      if(rdb == (base.rdb + additive - 1)){
+        #a non-plasmalogen EL
+        return(paste0(general.class,"(O-"))
+        #return(paste0("el",general.class))
+      }else{
+        #a plasmalogen
+        return(paste0(general.class,"(P-"))
+        #return(paste0("p",general.class))
+      }
+      
+    }
+  }
+}
+assign_species <- function(c,h,o,n,p,na,rdb,ion.mode){
+  lyso.carbon.cutoff.value <- 27
+  if(is.na(rdb)){
+    return("")
+  }
+  if(na == 1){
+    # mass of [M+Na]+ ions are exactly equal to exact mass + Na(22.989769)-1e(0.00055)
+    if( n == 0 && o == 5 && p == 0){
+      # i actually think this should have RDB = int
+      # mass of [M+Na]+ ions are exactly equal to exact mass + Na(22.989769)-1e(0.00055)
+      # DAG O5; Na 1; C33-65 for Na+ adduct (positive ion)
+      return("DAG(")
+    }
+    if(n == 0 && o == 6 && p == 0){
+      # i actually think this should have RDB = int
+      # mass of [M+Na]+ ions are exactly equal to exact mass + Na(22.989769)-1e(0.00055)
+      # TAG O6; Na 1; C43-75 for Na+ adduct (positive ion)
+      return("TAG(")
+    }else{
+      return("Species not detected (traceback: one Na but none of DAG or TAG)")
+    }
+    
+  }
+  if(rdb %% 1 == 0){
+    return(paste0("RDB is an integer. This species is not real. Ensure you input the composition of the ion as detected by MS"))
+  }else{
+    if(n == 0){
+      #pa, pg, or pi
+
+      if(o >=7 && o<= 8 && p == 1 && na == 0){
+        #PA
+        return(assign.el.vs.plasmalogen.vs.lyso(c,o,rdb,8,"PA",3,lyso.carbon.cutoff.value,ion.mode,1.5))
+
+      }
+      if(o >=9 && o<= 10 && p == 1 && na == 0){
+        #PG
+        return(assign.el.vs.plasmalogen.vs.lyso(c,o,rdb,10,"PG",6,lyso.carbon.cutoff.value,ion.mode,1.5))
+      }
+      if(o >=12 && o<= 13 && p <= 1 && na == 0){
+        #PI
+        return(assign.el.vs.plasmalogen.vs.lyso(c,o,rdb,13,"PI",9,lyso.carbon.cutoff.value,ion.mode,2.5))
+      }
+      #this isn't right b/c CL forms a charge of 2, so everything is cut in half
+      
+      #but i am pretty sure we want to look for cardiolipin asn an [M-2H]2- ion, so everything divided by 2
+      #if( o == 17 && p == 2 && na == 0)
+      
+      else{
+        return("Species not detected (traceback: zero nitrogen but none of: PA, PG, or PI)")
+      }
+    }
+    if(n == 2){
+      if(p == 1 && o >= 5 && o<= 7 && na == 0){
+        return("SM(")
+      }else{
+        return("Species not detected (traceback: 2 nitrogen but not SM")
+      }
+    }
+    if(n == 1){
+      if(p == 0 && o >= 3 && o <= 4 && na == 0){
+        #if o == 4 it could be MAG+NH4 adduct
+        return("Ceramide(")
+      }
+      
+      if(p == 0 && o == 5 && na == 0){
+        #DAG: DAG O5 N1; C33-65 for NH4+ adduct (positive ion mode)
+        return("DAG(")
+        #sodium adduct DAG has base 2 RDB in positive ion mode
+        #NH4+ adduct DAG has base 0.5 RDB in positive ion mode
+      }
+      if(p == 0 && o == 6 && na == 0){
+        #TAG: TAG O 6; N 1; C 43-75 for NH4+ adduct (positive ion mode)
+        return("TAG(")
+        #TG(16:0/16:0/16:0)+Na has 3 RDB in [M+H]+
+        #TG(16:0/16:0/16:0)+NH4+ has 1.5 RDB in [M+H]+, but I don't think it should change for this species in [M-H]-
+      }
+      
+      if(p == 1 && o >= 9 && o <= 10 && na == 0){
+        #"PS"
+        return(assign.el.vs.plasmalogen.vs.lyso(c,o,rdb,10,"PS",6,lyso.carbon.cutoff.value,ion.mode,2.5))
+      }
+      if(p == 1 && o>=7 && o<=8 && na == 0){
+        if((c %% 2) == 0) {
+          #PC
+          return(assign.el.vs.plasmalogen.vs.lyso(c,o,rdb,8,"PC",8,lyso.carbon.cutoff.value,ion.mode,1.5))
+        }else{
+          #PE
+          return(assign.el.vs.plasmalogen.vs.lyso(c,o,rdb,8,"PE",5,lyso.carbon.cutoff.value,ion.mode,1.5))
+        }
+      }else{
+        return("Species not detected (traceback: 1 nitrogen but none of: Ceramide, DAG, TAG, PS, PC, or PE")
+      }
+    }
+    return("Species not detected (traceback: RDB is not an integer but species has 3 or more nitrogens)")
+  }
+}
+get_general_structure <- function(carbon.total,rdb.equiv,species,ionmode){
+  if(ionmode == "neg.ion"){
+    additive <- 1
+  }else{
+    additive <- 0
+  }
+  #c("PA","PG","PI","SM","Ceramide","PS","PC","PE")
+  if(grepl("PA",species)){
+    n.double.bonds <- (rdb.equiv - (1.5+additive))
+    n.fa.carbons <- (carbon.total - 3)
+    if(grepl("O-",species) | grepl("^L",species)){
+      n.double.bonds <- n.double.bonds+1
+    }
+
+  }
+  if(grepl("PG",species)){
+    n.double.bonds <-  (rdb.equiv - (1.5+additive))
+    n.fa.carbons <- (carbon.total - 6)
+    if(grepl("O-",species) | grepl("^L",species)){
+      n.double.bonds <- n.double.bonds+1
+    }
+
+  }
+  if(grepl("PI",species)){
+    n.double.bonds <-  (rdb.equiv - (2.5+additive))
+    n.fa.carbons <- (carbon.total - 9)
+    if(grepl("O-",species) | grepl("^L",species)){
+      n.double.bonds <- n.double.bonds+1
+    }
+
+  }
+  if(grepl("SM",species)){
+    n.double.bonds <-  (rdb.equiv - (0.5+additive))
+    n.fa.carbons <- (carbon.total - 5)
+  }
+  if(grepl("Ceramide",species)){
+    n.double.bonds <-  (rdb.equiv - (0.5+additive))
+    n.fa.carbons <- (carbon.total - 0)
+  }
+  if(grepl("PS",species)){
+    n.double.bonds <-  (rdb.equiv - (2.5+additive))
+    n.fa.carbons <- (carbon.total - 6)
+    if(grepl("O-",species) | grepl("^L",species)){
+      n.double.bonds <- n.double.bonds+1
+    }
+
+  }
+  if(grepl("PC",species)){
+    n.double.bonds <-  (rdb.equiv - (1.5+additive))
+    n.fa.carbons <- (carbon.total - 8)
+    if(grepl("O-",species) | grepl("^L",species)){
+      n.double.bonds <- n.double.bonds+1
+    }
+
+  }
+  if(grepl("PE",species)){
+    n.double.bonds <-  (rdb.equiv - (1.5+additive))
+    n.fa.carbons <- (carbon.total - 5)
+    if(grepl("O-",species) | grepl("^L",species)){
+      n.double.bonds <- n.double.bonds+1
+    }
+
+  }
+  if(grepl("DAG",species)){
+    if(rdb.equiv %% 1 == 0){
+      #RDB is an int -> sodium adduct DAG
+      #sodium adduct DAG has base 2 RDB in positive ion mode
+      n.double.bonds <-  (rdb.equiv - (2))
+      #don't add additive here b/c I don't think its RDB.equivs would change in positve vs. negative ion mode
+    }else{
+      #NH4+ adduct DAG has base 0.5 RDB in positive ion mode
+      n.double.bonds <-  (rdb.equiv - (0.5))
+      #don't add additive here b/c I don't think its RDB.equivs would change in positve vs. negative ion mode
+    }
+    n.fa.carbons <- (carbon.total - 3)
+  }
+  if(grepl("TAG",species)){
+    if(rdb.equiv %% 1 == 0){
+      #RDB is an int -> sodium adduct
+      #TG(16:0/16:0/16:0)+Na has 3 RDB in [M+H]+
+      n.double.bonds <-  (rdb.equiv - (3))
+      #don't add additive here b/c I don't think its RDB.equivs would change in positve vs. negative ion mode
+    }else{
+      #TG(16:0/16:0/16:0)+NH4+ has 1.5 RDB in [M+H]+, but I don't think it should change for this species in [M-H]-
+      n.double.bonds <-  (rdb.equiv - (1.5))
+      #don't add additive here b/c I don't think its RDB.equivs would change in positve vs. negative ion mode
+    }
+    n.fa.carbons <- (carbon.total - 3)
+    
+    #TG(16:0/16:0/16:0)+Na has 3 RDB in [M+H]+
+   
+    
+  }
+  if(n.double.bonds>=0){
+    return(paste0(species,n.fa.carbons,":",n.double.bonds,")"))
+  }else{
+    return(paste0("Invalid result: Number of double bonds calculated to be: ",n.double.bonds,". Check ion mode and composition"))
+  }
+}
+
+#these are wrapper functions to used implement functions above over vectors/columns
+get_general_structure_over_vector<-function(carbon.total,rdb.equiv,species,ionmode){
+  if(!(species %in% all.species)){
+    return("")
+  }else{
+    result<-get_general_structure(carbon.total,rdb.equiv,species,ionmode)
+    result<-ifelse(grepl("nvalid",result,ignore.case = T),"",result)
+    return(result)
+  }
+}
+return_num_elements <- function(element_letter,column_of_df){
+  sapply(column_of_df,function(x) extract_num_elements(element_letter,x))
+}
+isotope.dist.function <- function(num.carbon, num.13.carbon,parent.intensity){
+   IsotopicDistribution(formula = list(C = num.carbon),charge=1 )$percent[1+num.13.carbon]*0.01*parent.intensity
+}
+
+pc <- read.csv('df_pc_posion_correctedmz_comp.csv') %>% 
+  mutate(ion.mode = "positive",
+         species = "pc")
+sm<-read.csv('df_sm_posion_correctedmz_comp.csv')%>% 
+  mutate(ion.mode = "positive",
+         species = "sm")
+pa<-read.csv('df_pa_negion_correctedmz_comp.csv')%>% 
+  mutate(ion.mode = "negative",
+         species = "pa")
+ps<-read.csv('df_ps_negion_correctedmz_comp.csv')%>% 
+  mutate(ion.mode = "negative",
+         species = "ps")
+pe<-read.csv('df_pe_negion_correctedmz_comp.csv')%>% 
+  mutate(ion.mode = "negative",
+         species = "pe")
+cer<-read.csv('df_ceramides_negion_correctedmz_comp.csv')%>% 
+  mutate(ion.mode = "negative",
+         species = "cer")
+pg<-read.csv('df_pg_negion_correctedmz_comp.csv') %>% 
+  mutate(ion.mode = "negative",
+         species = "pg")
+pi<-read.csv('df_pi_negion_correctedmz_comp.csv') %>% 
+  mutate(ion.mode = "negative",
+         species = "pi")
+
+clean_each_species_df <- function(data.frame,ion.mode,n.samples.total.in.ion.mode){
+  if(ion.mode == "neg.ion"){
+    hydrogen.modifier <- 1
+  }else{
+    hydrogen.modifier <- (-1)
+  }
+  
+data.frame <- data.frame %>% 
+  mutate(carbons = return_num_elements("C",mf),
+         hydrogens = return_num_elements("H",mf) - hydrogen.modifier,
+         oxygens = return_num_elements("O",mf),
+         nitrogens = return_num_elements("N",mf),
+         phosphates = return_num_elements("P",mf),
+         carbon_isotope = return_num_elements("[13C]",mf),
+         condition = str_sub(fullsample,start = 1, end = 2)) %>% 
+  mutate(rdb.equiv = ( (carbons+carbon_isotope) - (hydrogens/2) + ((nitrogens+phosphates)/2) +1 ))
+
+data.frame$species_class <- mapply(assign_species,(data.frame$carbons+data.frame$carbon_isotope),data.frame$hydrogens,data.frame$oxygens,data.frame$nitrogens,data.frame$phosphates,0,as.numeric(data.frame$rdb.equiv),ion.mode,SIMPLIFY = T)
+
+data.frame$structure <- mapply(get_general_structure_over_vector,(data.frame$carbons+data.frame$carbon_isotope),data.frame$rdb.equiv,data.frame$species_class,ion.mode,SIMPLIFY = T)
+
+data.frame %>% filter(structure != "",abs(ppm) < 2.5) %>%
+  group_by(mf) %>%
+  mutate(n = n()) %>%
+  ungroup() %>% 
+  dplyr::filter(n >= (n.samples.total.in.ion.mode-2)) %>%
+  dplyr::select(!c(X,Unnamed..0,mz,intensity,theo.mass,delta,comp,add.info,rep,sample_loc_row,slope,yint,error,info,species,n,condition))
+
+}
+
+pi<-clean_each_species_df(pi,"neg.ion",16) %>% 
+  filter(rel.intensity != 100)
+pg<-clean_each_species_df(pg,"neg.ion",16)%>% 
+  filter(rel.intensity != 100)
+cer<-clean_each_species_df(cer,"neg.ion",16)%>% 
+  filter(rel.intensity != 100)
+pe<-clean_each_species_df(pe,"neg.ion",16)
+ps<-clean_each_species_df(ps,"neg.ion",16)%>% 
+  filter(rel.intensity != 100)
+pa<-clean_each_species_df(pa,"neg.ion",16)%>% 
+  filter(rel.intensity != 100, 
+         !(correctedmz %in% unique((pe %>% filter(abs(chemcalc_error)<=0.0005))$correctedmz)))
+pc<-clean_each_species_df(pc,"pos.ion",13)
+sm<-clean_each_species_df(sm,"pos.ion",13)%>% 
+  filter(rel.intensity != 100)
+
+df<-rbind(rbind(rbind(rbind(rbind(pc,sm),rbind(pa,ps)),pe),cer),rbind(pg,pi)) %>% 
+  filter(ifelse(ion.mode=="positive",species_class == "PC" | species_class == "SM",species_class %in% all.species[all.species != "PC" & all.species != "SM"]))
+
+analyzed.df2<-df %>%
+  group_by(structure,fullsample) %>%
+  filter(rel.intensity != 100) %>%
+  mutate(n = n()) %>%
+  ungroup() %>%
+  filter(n>1) %>%
+  mutate(contains_carbon_isotope = ifelse(carbon_isotope>0,T,F)) %>%
+  dplyr::select(!c(carbons,hydrogens,oxygens,nitrogens,phosphates,unsat,chemcalc_error,ppm,ion.mode,n)) %>%
+  group_by(fullsample,structure,contains_carbon_isotope) %>%
+  mutate(n = n()) %>%
+  ungroup() %>%
+  mutate(keep = ifelse(contains_carbon_isotope,ifelse(n == 1, carbon_isotope <= 3, T),T) ) %>%
+  filter(keep) %>%
+  dplyr::select(!c(n,keep)) %>%
+  group_by(fullsample,structure,contains_carbon_isotope) %>%
+  mutate(sum.of.rel.intensities.isotope.binary = sum(rel.intensity)) %>%
+  ungroup() %>%
+  distinct(fullsample,structure,contains_carbon_isotope, .keep_all = T) %>%
+  dplyr::select(!c(rel.intensity)) %>%
+  group_by(sample,structure,contains_carbon_isotope) %>%
+  mutate(avg.rel.intensity.binary = mean(sum.of.rel.intensities.isotope.binary)) %>%
+  ungroup() %>%
+  distinct(sample,structure,contains_carbon_isotope,.keep_all = T) %>%
+  dplyr::select(!c(sum.of.rel.intensities.isotope.binary,carbon_isotope,fullsample)) %>%
+  group_by(sample,structure) %>%
+  mutate(ratio.isotope.to.nonisotope = avg.rel.intensity.binary[2]/avg.rel.intensity.binary[1],
+         avg.intensity = mean(avg.rel.intensity.binary)) %>%
+  ungroup() %>%
+  distinct(sample,structure,.keep_all = T) %>%
+  dplyr::select(!c(contains_carbon_isotope,avg.rel.intensity.binary)) %>%
+  filter(!is.na(ratio.isotope.to.nonisotope)) %>%
+  mutate(condition = str_sub(sample,start = 1, end = 2)) 
+
+#really want this one
+df.of.int.1 <- df %>% 
+  filter(structure == "PE(P-38:5)") %>% 
+  mutate(condition = str_sub(sample,start = 1, end = 2)) %>% 
+  group_by(fullsample) %>% 
+  mutate(parent.int = max(rel.intensity)) %>% 
+  ungroup()
+
+df.of.int.1$expected <- mapply(isotope.dist.function,(df.of.int.1$carbons+df.of.int.1$carbon_isotope),df.of.int.1$carbon_isotope,df.of.int.1$parent.int) 
+
+#suppFig 6a
+df.of.int.1 %>% 
+  group_by(condition,mf) %>% 
+  mutate(mean.expected = mean(expected),
+         condition2 = paste0(condition,"_expected")) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = correctedmz))+
+  geom_point(aes(y = rel.intensity,color = condition))+
+  geom_line(aes(y = mean.expected,linetype = condition2))+
+  theme_bw()+
+  geom_text(aes(y = ifelse(correctedmz<750,7.5,25),label = mf),angle = 90,size = 3)+
+  labs(linetype = "Expected isotope\nintensity",
+       color = "Observed relative\nintensity")+
+  ggtitle("PE(P-38:5)")+
+  scale_color_manual(values = c("red","black"))+
+  xlab("m/z")+
+  ylab("Relative intensity")
+
+#and this one
+df.of.int.2 <- df %>% 
+  filter(structure == "PE(P-36:4)") %>% 
+  mutate(condition = str_sub(sample,start = 1, end = 2)) %>% 
+  group_by(fullsample) %>% 
+  mutate(parent.int = max(rel.intensity)) %>% 
+  ungroup()
+
+df.of.int.2$expected <- mapply(isotope.dist.function,(df.of.int.2$carbons+df.of.int.2$carbon_isotope),df.of.int.2$carbon_isotope,df.of.int.2$parent.int) 
+
+#Fig 5b
+df.of.int.2 %>% 
+  group_by(condition,mf) %>% 
+  mutate(mean.expected = mean(expected),
+         condition2 = paste0(condition,"_expected")) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = correctedmz))+
+  geom_point(aes(y = rel.intensity,color = condition))+
+  geom_line(aes(y = mean.expected,linetype = condition2))+
+  theme_bw()+
+  geom_text(aes(y = ifelse(correctedmz<724,7.5,25),label = mf),angle = 90,size = 3)+
+  labs(linetype = "Expected isotope\nintensity",
+       color = "Observed relative\nintensity")+
+  ggtitle("PE(P-36:4)")+
+  xlab("m/z")+
+  ylab("Relative intensity")+
+  scale_color_manual(values = c("red","black"))+
+  xlab("m/z")+
+  ylab("Relative intensity")+
+  theme(legend.position = "none")
+
+df.for.stats <- analyzed.df2 %>% dplyr::select(!c(rdb.equiv,correctedmz,em,mf,species_class,condition)) %>% 
+  pivot_wider(names_from = sample,values_from = c(ratio.isotope.to.nonisotope,avg.intensity))
+intensity.matrix <- apply(df.for.stats, 2, function(x) replace(x, is.na(x), (min(x, na.rm = TRUE)) ) )
+intensity.matrix <- apply(intensity.matrix[,-1], 2, as.numeric)
+rownames(intensity.matrix)<-df.for.stats$structure
+sc<-grep("nonisotope_sc",colnames(intensity.matrix), value=TRUE) 
+kd<-grep("nonisotope_ko",colnames(intensity.matrix), value=TRUE)
+df.for.stats
+pvals<-apply(intensity.matrix,
+      1,
+      function(x) t.test(as.numeric(x[sc]),as.numeric(x[kd]))$p.value )
+
+results.df <- as.data.frame(pvals)
+results.df$p.adj<-p.adjust(results.df$pvals,method = "BH")
+results.df$ratio<-apply(intensity.matrix,
+      1,
+      function(x) mean(as.numeric(x[sc]))/mean(as.numeric(x[kd])) )
+sc<-grep("intensity_sc",colnames(intensity.matrix), value=TRUE) 
+kd<-grep("intensity_ko",colnames(intensity.matrix), value=TRUE)
+results.df$intensity<-apply(intensity.matrix,
+      1,
+      function(x) mean(c(as.numeric(x[sc]),
+                       as.numeric(x[kd]))
+                       ) )
+
+results.df$structure <- rownames(results.df)
+
+df3 <- df %>% 
+  filter(rel.intensity != 100) %>% 
+  mutate(mf = paste0(mf,"_",structure)) %>% 
+  dplyr::select(!c(rdb.equiv,sample,carbons,hydrogens,oxygens,nitrogens,phosphates,carbon_isotope,correctedmz,em,unsat,chemcalc_error,ppm,ion.mode,species_class,structure)) %>% 
+  pivot_wider(names_from = fullsample,values_from = rel.intensity,values_fn = mean)
+
+intensity.matrix <- apply(as.matrix(df3)[,-1], 2, as.numeric)
+rownames(intensity.matrix)<-df3$mf
+
+intensity.matrix <- apply(intensity.matrix, 2, function(x) replace(x, is.na(x), (min(x, na.rm = TRUE)) ) )
+
+intensity.df <- as.data.frame(intensity.matrix)
+intensity.df$comp <- rownames(intensity.matrix)
+
+sc<-grep("sc",colnames(intensity.matrix),value = T)
+ko<-grep("ko",colnames(intensity.matrix),value = T)
+
+pvals<-apply(intensity.matrix,
+      1,
+      function(x) t.test(as.numeric(x[sc]),as.numeric(x[ko]))$p.value )
+compwise.df<-data.frame(pvals,row.names = rownames(intensity.matrix))
+compwise.df$p.adj<-p.adjust(compwise.df$pvals,method = "BH")
+compwise.df$ratio<-apply(intensity.matrix,
+      1,
+      function(x) mean(as.numeric(x[sc]))/mean(as.numeric(x[ko])) )
+compwise.df$intensity<-apply(intensity.matrix,
+      1,
+      function(x) mean(c(as.numeric(x[sc]),
+                       as.numeric(x[ko]))
+                       ) )
+
+
+zscore_df<-df %>%
+  group_by(structure,fullsample) %>%
+  filter(rel.intensity != 100) %>%
+  mutate(n = n()) %>%
+  ungroup() %>%
+  filter(n>1) %>%
+  mutate(contains_carbon_isotope = ifelse(carbon_isotope>0,T,F)) %>%
+  dplyr::select(!c(carbons,hydrogens,oxygens,nitrogens,phosphates,unsat,chemcalc_error,ppm,ion.mode,n)) %>%
+  group_by(fullsample,structure,contains_carbon_isotope) %>%
+  mutate(n = n()) %>%
+  ungroup() %>%
+  mutate(keep = ifelse(contains_carbon_isotope,ifelse(n == 1, carbon_isotope <= 3, T),T) ) %>%
+  filter(keep) %>%
+  dplyr::select(!c(n,keep)) %>%
+  group_by(fullsample,structure,contains_carbon_isotope) %>%
+  mutate(sum.of.rel.intensities.isotope.binary = sum(rel.intensity)) %>%
+  ungroup() %>%
+  distinct(fullsample,structure,contains_carbon_isotope, .keep_all = T) %>%
+  dplyr::select(!c(rel.intensity)) %>%
+  group_by(sample,structure,contains_carbon_isotope) %>%
+  mutate(avg.rel.intensity.binary = mean(sum.of.rel.intensities.isotope.binary)) %>%
+  ungroup() %>%
+  distinct(sample,structure,contains_carbon_isotope,.keep_all = T) %>%
+  dplyr::select(!c(sum.of.rel.intensities.isotope.binary,carbon_isotope,fullsample)) %>%
+  group_by(sample,structure) %>%
+  mutate(ratio.isotope.to.nonisotope = avg.rel.intensity.binary[2]/avg.rel.intensity.binary[1],
+         avg.intensity = mean(avg.rel.intensity.binary)) %>%
+  ungroup() %>%
+  distinct(sample,structure,.keep_all = T) %>%
+  arrange(species_class) %>% 
+  dplyr::select(!c(contains_carbon_isotope,avg.rel.intensity.binary,mf,em,rdb.equiv,correctedmz,avg.intensity,species_class)) %>%
+  filter(!is.na(ratio.isotope.to.nonisotope)) %>% 
+  pivot_wider(names_from = sample,values_from = ratio.isotope.to.nonisotope)
+
+zscore_df[is.na(zscore_df)]<-0
+str_sub(zscore_df$structure,start = 1, end = str_locate(zscore_df$structure,":")[,1]-3)
+
+zscores<-t(base::scale(t(as.matrix(zscore_df[,-1]))))
+rownames(zscores)<-zscore_df$structure
+
+
+
+library(ComplexHeatmap)
+#Fig 5c
+Heatmap(zscores[rownames(zscores) %in% rownames(results.df %>% filter(p.adj<=0.25)),],column_order = c("sc1","sc2","sc3","sc4","ko5","ko6","ko8","ko7"),
+        row_names_gp = grid::gpar(fontsize = 7))
+
+```
+
+```{r figure-5def}
+library(dplyr)
+library(stringr)
+library(slatR)
+library(tidyr)
+library(ggplot2)
+library(ComplexHeatmap)
+
+df <- read.csv('051123_pexrapkd_nuc_and_pm_lipidomics_negion.csv')
+
+df <- df %>% filter(comp != "",abs(delta)<=2) %>% 
+  mutate(fraction = str_sub(sample,start = 4, end = 6),
+              condition = str_sub(sample,start = 0, end = 2)) %>% 
+  group_by(fraction,condition,comp) %>% 
+  mutate(n = n()) %>% 
+  ungroup() %>% 
+  filter(n >= 3)
+
+df$structure <- slatR::assign_structures(df$comp,"neg.ion",
+                                         max.dbl.bnds = 8)
+df <- df[!is.na(df$structure),]
+
+negion.df<-df %>% group_by(sample) %>% 
+  mutate(is_int = rel.intensity[structure == "PE(28:0)"],
+         rel.intensity = rel.intensity/is_int) 
+
+wide.df<-df %>% group_by(sample) %>% 
+  mutate(is_int = rel.intensity[structure == "PE(28:0)"],
+         rel.intensity = rel.intensity/is_int) %>% 
+  mutate(structure_comp = paste0(structure,"_",comp)) %>% 
+  ungroup() %>% dplyr::select(c("rel.intensity","sample","structure_comp")) %>% 
+  filter(rel.intensity != 1) %>% 
+  pivot_wider(names_from = sample,
+              values_from = rel.intensity,
+              values_fn = mean)
+
+wide.mat <- as.matrix(wide.df[,-1])
+rownames(wide.mat)<-wide.df$structure_comp
+
+norm.mat <- normalize_sl(wide.mat)
+full.mat <- impute_sl(norm.mat)
+
+
+full.mat.nuc.negion <- full.mat[,grepl("nuc",colnames(full.mat))]
+full.mat.pm.negion <- full.mat[,grepl("pls",colnames(full.mat))]
+
+dim(full.mat.nuc.negion)
+dim(full.mat.pm.negion)
+
+
+sc<-grep("sc",colnames(full.mat.nuc.negion),value = T)
+ko<-grep("kd",colnames(full.mat.nuc.negion),value = T)
+result.df.nuc.negion <- test_for_da_sl(full.mat.nuc.negion,sc,ko)
+
+
+sc<-grep("sc",colnames(full.mat.pm.negion),value = T)
+ko<-grep("kd",colnames(full.mat.pm.negion),value = T)
+result.df.pm.negion <- test_for_da_sl(full.mat.pm.negion,sc,ko)
+
+
+df <- read.csv('051123_pexrapkd_nuc_and_pm_lipidomics_posion.csv')
+
+df <- df %>% filter(comp != "",abs(delta)<=2) %>% 
+  mutate(fraction = str_sub(sample,start = 4, end = 6),
+              condition = str_sub(sample,start = 0, end = 2)) %>% 
+  group_by(fraction,condition,comp) %>% 
+  mutate(n = n()) %>% 
+  ungroup() %>% 
+  filter(n >= 3)
+
+df$structure <- slatR::assign_structures(df$comp,"pos.ion",
+                                         max.dbl.bnds = 8)
+df <- df[!is.na(df$structure),]
+
+
+posion.df<-df %>% group_by(sample) %>% 
+  mutate(is_int = rel.intensity[structure == "PC(28:0)"],
+         rel.intensity = rel.intensity/is_int) 
+
+wide.df<-df %>% group_by(sample) %>% 
+  mutate(is_int = rel.intensity[structure == "PC(28:0)"],
+         rel.intensity = rel.intensity/is_int) %>% 
+  mutate(structure_comp = paste0(structure,"_",comp)) %>% 
+  ungroup() %>% dplyr::select(c("rel.intensity","sample","structure_comp")) %>% 
+  filter(rel.intensity != 1) %>% 
+  pivot_wider(names_from = sample,
+              values_from = rel.intensity,
+              values_fn = mean)
+
+wide.mat <- as.matrix(wide.df[,-1])
+rownames(wide.mat)<-wide.df$structure_comp
+
+norm.mat <- normalize_sl(wide.mat)
+full.mat <- impute_sl(norm.mat)
+
+
+full.mat.nuc.posion <- full.mat[,grepl("nuc",colnames(full.mat))]
+full.mat.pm.posion <- full.mat[,grepl("pls",colnames(full.mat))]
+
+dim(full.mat.nuc.posion)
+dim(full.mat.pm.posion)
+
+
+sc<-grep("sc",colnames(full.mat.nuc.posion),value = T)
+ko<-grep("kd",colnames(full.mat.nuc.posion),value = T)
+result.df.nuc.posion <- test_for_da_sl(full.mat.nuc.posion,sc,ko)
+
+sc<-grep("sc",colnames(full.mat.pm.posion),value = T)
+ko<-grep("kd",colnames(full.mat.pm.posion),value = T)
+result.df.pm.posion <- test_for_da_sl(full.mat.pm.posion,sc,ko)
+
+
+m0 <- rbind(full.mat.nuc.negion,full.mat.nuc.posion)
+m<-t(scale(t(m0[rownames(m0) %in% rownames(rbind(result.df.nuc.negion,result.df.nuc.posion) %>% filter(p.adj<=0.01)),])))
+rownames(m)<-str_sub(rownames(m),start = 1, end = str_locate(rownames(m),"_")[,1]-1)
+#figure 5d
+Heatmap(m,show_row_dend = F)
+
+m0 <- rbind(full.mat.pm.negion,full.mat.pm.posion)
+m<-t(scale(t(m0[rownames(m0) %in% rownames(rbind(result.df.pm.negion,result.df.pm.posion) %>% filter(p.adj<=0.025)),])))
+rownames(m)<-str_sub(rownames(m),start = 1, end = str_locate(rownames(m),"_")[,1]-1)
+#figure 5e
+Heatmap(m,show_row_dend = F)
+
+#data for fig 5f
+pc_pe_ratios <- rbind(negion.df,posion.df) %>% mutate(class = ifelse(str_detect(structure,"PE\\("),"PE",
+                                                     ifelse(str_detect(structure,"PC\\("),"PC",NA))) %>% 
+  filter(!is.na(class)) %>% 
+  group_by(sample,class) %>% 
+  summarise(sum = sum(rel.intensity)) %>% 
+  group_by(sample) %>% 
+  mutate(ratio = sum[1]/sum[2]) %>% 
+  ungroup() %>% 
+  distinct(sample,.keep_all = T) %>% 
+  dplyr::select(!c(class,sum)) %>% 
+  mutate(fraction = str_sub(sample,start = 4, end = 6),
+         condition = str_sub(sample,start = 0, end = 2)) 
+
+
+```
+
+
+```{r supplemental-figure-1}
+library(lubridate)
+
+df<-read.csv('110222_pexrap_ako_hfd_phenomaster_data.csv') %>%
+  mutate(time = parse_date_time(Date.Time, "mdy HM"),
+         genotype = ifelse(Animal.No. %in% c(16,17,20,27),"cre_neg","cre_pos"),) %>%
+  mutate(roundedtime = parse_date_time(paste(month(time),day(time),year(time),hour(time),":00"),"mdy HM"))
+
+# analyze activity data for supp fig 1e:
+activity_data_dayvsnight <- df %>%
+  mutate(genotype=ifelse(genotype=="cre_neg","Control","PexRAP-AKO"),
+         day.vs.night = ifelse( (hour(time) < 6 | hour(time) >= 18),"night","day") )%>%
+  group_by(Animal.No.,day.vs.night) %>%
+  mutate(vo2=mean(VO2.3.),vco2=mean(VCO2.3.),ee = mean(H.3.),rer = mean(RER),activity = mean(XT.YT)) %>%
+  ungroup() %>%
+  distinct(Animal.No.,day.vs.night,.keep_all = T) %>%
+  dplyr::select(c("genotype","activity","day.vs.night")) %>%
+  arrange(day.vs.night,genotype) 
+activity_data_combined <- df %>%
+  mutate(genotype=ifelse(genotype=="cre_neg","Control","PexRAP-AKO")) %>%
+  group_by(Animal.No.) %>%
+  mutate(vo2=mean(VO2.3.),vco2=mean(VCO2.3.),ee = mean(H.3.),rer = mean(RER),activity = mean(XT.YT)) %>%
+  ungroup() %>%
+  distinct(Animal.No.,.keep_all = T) %>%
+  dplyr::select(c("genotype","activity")) %>%
+  arrange(genotype) 
+
+
+#supp fig 1f
+df %>% 
+  mutate(genotype=ifelse(genotype=="cre_neg","Control","PexRAP-AKO")) %>% 
+  group_by(roundedtime,genotype) %>% 
+  summarise(vo2=mean(VO2.3.),vco2=mean(VCO2.3.),ee = mean(H.3.),rer = mean(RER),activity = mean(XT.YT)) %>% 
+  ggplot(aes(x=roundedtime,y=ee,color=genotype))+
+  geom_line()+
+  theme_bw()+
+  scale_color_manual(values=c("black","red"))+
+  annotate(geom = "rect", xmin = parse_date_time("2022-11-02 18:00:00","ymd HMS"), xmax = parse_date_time("2022-11-03 06:00:00","ymd HMS"), ymin = -Inf, ymax = Inf,
+           fill = "gray", colour = NA, alpha = 0.35) +
+  annotate(geom = "rect", xmin = parse_date_time("2022-11-03 18:00:00","ymd HMS"), xmax = parse_date_time("2022-11-04 06:00:00","ymd HMS"), ymin = -Inf, ymax = Inf,
+           fill = "gray", colour = NA, alpha = 0.35)  +
+  annotate(geom = "rect", xmin = parse_date_time("2022-11-04 18:00:00","ymd HMS"), xmax = parse_date_time("2022-11-05 06:00:00","ymd HMS"), ymin = -Inf, ymax = Inf,
+           fill = "gray", colour = NA, alpha = 0.35)+
+  annotate(geom = "rect", xmin = parse_date_time("2022-11-05 18:00:00","ymd HMS"), xmax = parse_date_time("2022-11-06 06:00:00","ymd HMS"), ymin = -Inf, ymax = Inf,
+           fill = "gray", colour = NA, alpha = 0.35) +
+  ylab("Energy expenditure (kcal/hour)")+
+  xlab("")+
+  labs(color = "Genotype")
+
+#suppfig 1g
+read.csv('110222_pexrap_ako_hfd_phenomaster_data.csv') %>%
+  mutate(time = parse_date_time(Date.Time, "mdy HM"),
+         genotype = ifelse(Animal.No. %in% c(16,17,20,27),"cre_neg","cre_pos"),) %>%
+  mutate(roundedtime = parse_date_time(paste(month(time),day(time),year(time),hour(time),":00"),"mdy HM")) %>% filter(time >= parse_date_time("2022-11-03 06:00:00","ymd HMS")) %>% 
+  group_by(Animal.No.) %>% 
+  summarise(vo2=mean(VO2.3.),vco2=mean(VCO2.3.),rer = mean(RER),ee=mean(H.3.),mass = mean(Weight),genotype=genotype[1]) %>% 
+  ungroup() %>% 
+  mutate(genotype=ifelse(genotype=="cre_neg","Control","PexRAP-AKO")) %>% 
+  ggplot(aes(y=ee,x=mass,color = genotype,group = genotype))+
+  geom_point()+
+  geom_smooth(method = "lm", se = F)+
+  theme_bw()+
+  ylab("Energy Expenditure (kcal/hour)")+
+  scale_color_manual(values=c("black","red"))+
+  xlab("Body weight (grams)")+
+  labs(color = "Genotype")+
+  annotate("text", x = 34, y = 0.54, label = "Genotype P = 0.7024",size=3.5,color="black")#+
+  theme(legend.position = "none")
+
+#analysis for sfig1g
+g<-read.csv('110222_pexrap_ako_hfd_phenomaster_data.csv') %>%
+  mutate(time = parse_date_time(Date.Time, "mdy HM"),
+         genotype = ifelse(Animal.No. %in% c(16,17,20,27),"cre_neg","cre_pos"),) %>%
+  mutate(roundedtime = parse_date_time(paste(month(time),day(time),year(time),hour(time),":00"),"mdy HM")) %>% filter(time >= parse_date_time("2022-11-03 06:00:00","ymd HMS")) %>% 
+  group_by(Animal.No.) %>% 
+  summarise(vo2=mean(VO2.3.),vco2=mean(VCO2.3.),rer = mean(RER),ee=mean(H.3.),mass = mean(Weight),genotype=genotype[1]) %>% 
+  ungroup() %>% 
+  mutate(genotype=ifelse(genotype=="cre_neg","Control","PexRAP-AKO")) %>% 
+  glm( ee ~ mass + genotype , family = gaussian( link = "identity" ),data = .)
+summary(g)
+
+#data for supp fig 1h
+rer_data <- read.csv('110222_pexrap_ako_hfd_phenomaster_data.csv') %>%
+  mutate(time = parse_date_time(Date.Time, "mdy HM"),
+         genotype = ifelse(Animal.No. %in% c(16,17,20,27),"cre_neg","cre_pos"),) %>%
+  mutate(roundedtime = parse_date_time(paste(month(time),day(time),year(time),hour(time),":00"),"mdy HM")) %>% filter(time >= parse_date_time("2022-11-03 06:00:00","ymd HMS")) %>%
+  group_by(Animal.No.) %>%
+  summarise(vo2=mean(VO2.3.),vco2=mean(VCO2.3.),rer = mean(RER),ee=mean(H.3.),mass = mean(Weight),genotype=genotype[1]) %>%
+  ungroup() %>%
+  mutate(genotype=ifelse(genotype=="cre_neg","Control","PexRAP-AKO")) %>%
+  arrange(genotype) 
+
+```
+
+
+```{r supplemental-figure-4}
+suppressMessages({
+  library(edgeR)
+  library(dplyr)
+  library(ggplot2)
+  library(ggrepel)
+  library(GO.db)
+  library(org.Mm.eg.db)
+  library(ComplexHeatmap)
+  library(stringr)
+  library(svglite)
+})
+counts_full<-read.csv('all.gene_counts.csv')
+
+#drop all columns except for raw counts by selecting only the columns w/counts
+just_counts<-counts_full %>% 
+  dplyr::select("sample.wt_8","sample.wt_7","sample.wt_5","sample.wt_3","sample.wt_2","sample.ko_6","sample.ko_5","sample.ko_3","sample.ko_2","sample.ko_1")
+
+#convert counts into matrix
+just_counts<-as.matrix(just_counts)
+
+#name rows of the matrix as ensemblIDs stored in list generic_gene
+rownames(just_counts)<- counts_full$ensembl_gene_id
+
+conditions<-c(rep("A",5),rep("B",5))
+design <- model.matrix(~conditions)
+
+
+#set data into DGElist type
+d <- DGEList(counts=just_counts,group=factor(conditions),genes=data.frame("ENTREZID"=counts_full$entrezgene,"SYMBOL"=counts_full$external_gene_name))
+
+
+keep<-filterByExpr(d,design)
+d<-d[keep,]
+
+#reset lib sizes after filtering (edgeR user guide and other sources all say to do this)
+d$samples$lib.size <- colSums(d$counts)
+#find normalization factors
+d<-calcNormFactors(d)
+logcpm<-cpm(d,log=TRUE)
+
+
+lcpm<-as.data.frame(logcpm)
+lcpm$Symbol<-mapIds(x = org.Mm.eg.db, 
+                   keys = rownames(lcpm), 
+                   keytype = "ENSEMBL",
+                   column = c("SYMBOL"),
+                  multiVals = "first")
+
+lipogenic.genes = c("Acaca","Scd2","Scd1","Fasn","Acly","Elovl6","Elovl3","Acss2","Me1","G6pdx")
+
+thermogenic<-c("Ppargc1a","Ppara","Ucp1","Cidea","Elovl3","Cox8b","Dio2","Gatm","Slc6a8","Ckm","Ckb","Mgat2","Lpin1","Gpat4","Dgat1","Atp2a1","Atp2a2")
+lcpm<-lcpm %>% filter(Symbol %in% thermogenic)
+rownames(lcpm)<-lcpm$Symbol
+lcpm<-lcpm[match(thermogenic,lcpm$Symbol),-11]
+zscores<-as.data.frame(t(scale(t(lcpm))))
+
+#Supp fig 4a
+Heatmap(as.matrix(zscores),
+        cluster_rows = F,
+        cluster_columns = T,
+        column_split = c(rep("WT",5),rep("AKO",5)), column_gap = unit(0,"mm"),
+        name = "Z-score",
+        column_labels = c(paste0(rep("WT",5),c(1,2,3,4,5)),paste0(rep("PexRAP_AKO",5),c(1,2,3,4,5))),
+        row_split = c(rep("UCP-1 dependent\nthermogenesis",7),rep("Creatine cycling",4),rep("Triglyceride\ncycling",4),rep("Calcium cycling",2)),
+        cluster_row_slices = F,
+        row_title_rot = 0,
+        show_parent_dend_line = F,
+         column_title=" ")
+
+```
+
+```{r supplemental-figure-5}
+counts_full<-read.csv('all.gene_counts.csv')
+#drop all columns except for raw counts by selecting only the columns w/counts
+just_counts<-counts_full %>% 
+  dplyr::select("sample.wt_8","sample.wt_7","sample.wt_5","sample.wt_3","sample.wt_2","sample.ko_6","sample.ko_5","sample.ko_3","sample.ko_2","sample.ko_1")
+#convert counts into matrix
+just_counts<-as.matrix(just_counts)
+#name rows of the matrix as ensemblIDs stored in list generic_gene
+rownames(just_counts)<- counts_full$ensembl_gene_id
+conditions<-c(rep("A",5),rep("B",5))
+design <- model.matrix(~conditions)
+#set data into DGElist type
+d <- DGEList(counts=just_counts,group=factor(conditions),genes=data.frame("ENTREZID"=counts_full$entrezgene,"SYMBOL"=counts_full$external_gene_name))
+keep<-filterByExpr(d,design)
+d<-d[keep,]
+#reset lib sizes after filtering (edgeR user guide and other sources all say to do this)
+d$samples$lib.size <- colSums(d$counts)
+#find normalization factors
+d<-calcNormFactors(d)
+logcpm<-cpm(d,log=TRUE)
+cpm_pexrap<-cpm(d,log=T)
+
+y <- estimateDisp(d,design,robust = TRUE)
+# plotBCV(y)
+#get results
+fit <- glmQLFit(y,design)
+qlf <- glmQLFTest(fit,coef=2)
+#store results as toptag_results
+toptag_results_pexrap<-topTags(qlf,n="Inf")$table
+i<-is.na(qlf$genes$ENTREZID)
+j<-qlf$genes$SYMBOL=="Rfc4"|qlf$genes$SYMBOL=="Zfp949"|qlf$genes$SYMBOL=="Dhrs7b"
+qlf2<-qlf[!i&!j,]
+go<-goana(qlf2,species="Mm",geneid="ENTREZID",plot=TRUE)
+topgo_pexrap<-topGO(go,n=Inf)
+
+
+#now start analyzing the 3t3l1 treated palmitate dataset
+df<-read.delim('GSE129442_htseq_deseq2_api.txt')[,c(1,4,5,2,3)]
+rownames(df)<-df$ENSEMBL_ID
+df<-df[,-1]
+conditions<-c(rep("ctrl",2),rep("palmitate",2))
+design <- model.matrix(~conditions)
+#set data into DGElist type
+d <- DGEList(counts=as.matrix(df),
+             group=factor(conditions),
+             genes=data.frame("ENTREZID"=mapIds(x = org.Mm.eg.db, 
+                   keys = rownames(df), 
+                   keytype = "ENSEMBL",
+                   column = c("ENTREZID"),
+                  multiVals = "first"),
+                  "SYMBOL"=mapIds(x = org.Mm.eg.db, 
+                   keys = rownames(df), 
+                   keytype = "ENSEMBL",
+                   column = c("SYMBOL"),
+                  multiVals = "first")))
+keep<-filterByExpr(d,design)
+d<-d[keep,]
+#reset lib sizes after filtering (edgeR user guide and other sources all say to do this)
+d$samples$lib.size <- colSums(d$counts)
+#find normalization factors
+d<-calcNormFactors(d)
+logcpm<-cpm(d,log=TRUE)
+cpm_palmitate<-cpm(d,log=T)
+
+y <- estimateDisp(d,design,robust = TRUE)
+# plotBCV(y)
+#get results
+fit <- glmQLFit(y,design)
+qlf <- glmQLFTest(fit,coef=2)
+
+#store results as toptag_results
+toptag_results_palmitate<-topTags(qlf,n="Inf")$table
+i<-is.na(qlf$genes$ENTREZID)
+qlf2<-qlf[!i,]
+go<-goana(qlf2,species="Mm",geneid="ENTREZID",plot=TRUE)
+
+topgo_palmitate<-topGO(go,n=Inf)
+
+topgo_palmitate$go<-rownames(topgo_palmitate)
+topgo_pexrap$go<-rownames(topgo_pexrap)
+
+#supp fig 5c
+merge(topgo_palmitate,topgo_pexrap, by = "go",suffixes=c("_palmitate","_pexrap")) %>% 
+  mutate(srebp_related=ifelse(str_detect(Term_pexrap,"SREBP"),T,F)) %>% 
+  ggplot(aes(x=-log10(P.Up_palmitate),y=-log10(P.Up_pexrap)))+
+  geom_point(size=1)+
+  theme_bw()+
+  geom_text_repel(aes(label=Term_palmitate),
+                  data = ~ subset(.,-log10(P.Up_palmitate)>10 & -log10(P.Up_pexrap)>5),
+                  size=2.5,
+                  max.overlaps = Inf,
+                  max.iter = 3e6,
+                  max.time = 20
+                  )+
+  ggtitle("GO pathway enrichment analysis: upregulated terms in PexRAP-AKO iWAT\nRNAseq vs. 3T3L1 palmitate treated RNAseq")
+
+```
+
+
+
